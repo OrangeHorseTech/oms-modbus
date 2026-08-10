@@ -1,0 +1,107 @@
+[package]
+name = "oms-modbus"
+version = "0.2.0"
+edition = "2021"
+rust-version = "1.80"
+description = "[Preview] High-performance, transport-generic Modbus library. Full Master (client) and Slave (server) for TCP, RTU, ASCII — unified API, passive bus monitoring, spec-compliant timing."
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/orangehorsetech/oms-modbus"
+homepage = "https://github.com/orangehorsetech/oms-modbus"
+documentation = "https://docs.rs/oms-modbus"
+readme = "README.md"
+keywords = ["modbus", "tcp", "rtu", "ascii", "industrial"]
+categories = ["embedded", "network-programming", "asynchronous"]
+
+[dependencies]
+tokio = { version = "1", features = ["net", "rt", "time", "sync", "macros", "io-util"] }
+tokio-util = { version = "0.7", features = ["codec"] }
+tokio-serial = "5"
+bytes = "1"
+futures-util = { version = "0.3", features = ["sink"] }
+async-trait = "0.1"
+thiserror = "1"
+log = "0.4"
+
+[dev-dependencies]
+tokio = { version = "1", features = ["rt-multi-thread"] }
+criterion = { version = "0.5", features = ["html_reports"] }
+crc = "3"
+
+[[bench]]
+name = "pdu_bench"
+harness = false
+
+[[bench]]
+name = "crc_bench"
+harness = false
+
+[[bench]]
+name = "transport_bench"
+harness = false
+
+[[example]]
+name = "tcp_client"
+path = "examples/tcp_client.rs"
+
+[[example]]
+name = "tcp_client_auto_tid"
+path = "examples/tcp_client_auto_tid.rs"
+
+[[example]]
+name = "tcp_client_gateway"
+path = "examples/tcp_client_gateway.rs"
+
+[[example]]
+name = "tcp_server"
+path = "examples/tcp_server.rs"
+
+[[example]]
+name = "rtu_server"
+path = "examples/rtu_server.rs"
+
+[[example]]
+name = "all_function_codes"
+path = "examples/all_function_codes.rs"
+
+[[example]]
+name = "bus_timing"
+path = "examples/bus_timing.rs"
+
+[[example]]
+name = "custom_service"
+path = "examples/custom_service.rs"
+
+[[example]]
+name = "custom_tap"
+path = "examples/custom_tap.rs"
+
+[[example]]
+name = "dynamic_server"
+path = "examples/dynamic_server.rs"
+
+[[example]]
+name = "file_recorder"
+path = "examples/file_recorder.rs"
+
+[[example]]
+name = "generic_transport"
+path = "examples/generic_transport.rs"
+
+[[example]]
+name = "reconnect"
+path = "examples/reconnect.rs"
+
+[[example]]
+name = "reconnect_serial"
+path = "examples/reconnect_serial.rs"
+
+[[example]]
+name = "server_with_hook"
+path = "examples/server_with_hook.rs"
+
+[[example]]
+name = "bus_monitor"
+path = "examples/bus_monitor.rs"
+
+[package.metadata.docs.rs]
+rustdoc-args = []
