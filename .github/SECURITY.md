@@ -5,7 +5,7 @@
 **Do not open a public issue.** Please report security vulnerabilities
 directly to:
 
-📧 **security@orangehorsetech.com**
+📧 **github@orangehorsetech.com**
 
 We will respond within 72 hours and work with you on a fix and disclosure
 timeline.
