@@ -1,5 +1,35 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! Modbus ASCII client and server — generic over transport.
+//!
+//! ASCII frames are hex-encoded with `:` prefix and CRLF suffix, making them
+//! human-readable but ~2× larger than RTU at the same baud rate. Works with
+//! any `AsyncRead + AsyncWrite` byte transport.
+//!
+//! # Quick start
+//!
+//! ```no_run
+//! use std::sync::Arc;
+//! use std::time::Duration;
+//! use oms_modbus::*;
+//!
+//! # async fn example() -> Result<(), Box<dyn std::error::Error>> {
+//! // In-memory duplex — works with any AsyncRead + AsyncWrite
+//! let (client_port, server_port) = tokio::io::duplex(1024);
+//!
+//! // ── Server ──────────────────────────────────────────────────
+//! let store = Arc::new(SlaveStore::with_holding_registers(&[(0, 42)]));
+//! let server = ascii::AsciiServer::new(server_port);
+//! tokio::spawn(async move { server.serve_forever(store).await.ok(); });
+//!
+//! // ── Client ──────────────────────────────────────────────────
+//! let client = ascii::AsciiClient::with_timeout(client_port, Duration::from_secs(3));
+//! let regs = client.read_holding_registers(1, 0, 1).await?;
+//! # Ok(())
+//! # }
+//! ```
+//!
+//! For bus-level capture and timing, use [`with_options`] which wraps the
+//! transport in [`SniffIo`] automatically.
 
 use std::fmt::Debug;
 use std::io;
@@ -41,6 +71,20 @@ type ReconnectFactory<T> = (
 ///
 /// For bus-level capture, use [`with_options`] which wraps the transport in
 /// [`SniffIo`] automatically.
+///
+/// # Example
+///
+/// ```no_run
+/// use std::time::Duration;
+/// use oms_modbus::*;
+///
+/// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
+/// let (client_port, _server) = tokio::io::duplex(1024);
+/// let client = ascii::AsciiClient::with_timeout(client_port, Duration::from_secs(3));
+/// let regs = client.read_holding_registers(1, 0, 5).await?;
+/// # Ok(())
+/// # }
+/// ```
 pub struct AsciiClient<T> {
     inner: Mutex<AsciiInner<T>>,
     timeout: Duration,
@@ -349,6 +393,22 @@ where
 // ── ASCII Server ────────────────────────────────────────────────────────
 
 /// Modbus ASCII server over any byte transport (serial, DuplexStream, etc.).
+///
+/// # Example
+///
+/// ```no_run
+/// use std::sync::Arc;
+/// use oms_modbus::*;
+///
+/// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
+/// let (port, _server_side) = tokio::io::duplex(64);
+/// let store = Arc::new(SlaveStore::with_holding_registers(&[(0, 42)]));
+///
+/// let server = ascii::AsciiServer::new(port);
+/// tokio::spawn(async move { server.serve_forever(store).await.ok(); });
+/// # Ok(())
+/// # }
+/// ```
 pub struct AsciiServer<T> {
     transport: T,
     bus_timing: Option<Arc<BusTiming>>,

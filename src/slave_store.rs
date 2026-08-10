@@ -22,6 +22,22 @@ const DEFAULT_REG_COUNT: usize = 1024;
 /// In-memory register store. Holding/input registers use contiguous
 /// `Vec<u16>` with `RwLock` for fast indexed access. Coils and discrete
 /// inputs use bit-packed `Vec<u8>` for memory efficiency.
+///
+/// # Example
+///
+/// ```no_run
+/// use std::sync::Arc;
+/// use oms_modbus::SlaveStore;
+///
+/// let store = Arc::new(SlaveStore::with_holding_registers(&[
+///     (0, 100),   // address 0 = 100
+///     (1, 200),   // address 1 = 200
+/// ]));
+/// store.write_coil(0, true);
+///
+/// assert_eq!(store.read_holding_register(0), 100);
+/// assert!(store.read_coil(0));
+/// ```
 pub struct SlaveStore {
     coils: RwLock<Vec<u8>>,
     discrete_inputs: RwLock<Vec<u8>>,

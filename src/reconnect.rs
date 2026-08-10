@@ -7,6 +7,20 @@
 use std::time::Duration;
 
 /// Reconnect parameters for transport clients.
+///
+/// # Example
+///
+/// ```no_run
+/// use std::time::Duration;
+/// use oms_modbus::*;
+///
+/// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
+/// let addr = "127.0.0.1:502".parse()?;
+/// let client = tcp::TcpClient::connect(addr).await?
+///     .with_reconnect(0, Duration::from_millis(100)); // 0 = infinite retry
+/// # Ok(())
+/// # }
+/// ```
 #[derive(Debug, Clone, Copy)]
 pub struct ReconnectConfig {
     /// Maximum retry attempts. 0 = infinite.

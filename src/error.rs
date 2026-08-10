@@ -74,6 +74,22 @@ pub const SLAVE_ID_MISMATCH: &str = "slave ID mismatch: expected";
 ///
 /// Use [`label`](ModbusError::label) for a short human-readable tag
 /// suitable for display in a status bar or error column.
+///
+/// # Example
+///
+/// ```
+/// use oms_modbus::ModbusError;
+///
+/// // Match on specific error kinds
+/// let result: Result<Vec<u16>, ModbusError> = Err(ModbusError::timeout("RTU recv timed out"));
+///
+/// match &result {
+///     Err(ModbusError::Timeout(_)) => println!("Retry or re-connect"),
+///     Err(ModbusError::Exception { function: _, code: _ }) => println!("Modbus exception"),
+///     Err(e) => eprintln!("{} — {}", e.label(), e.detail()),
+///     Ok(_) => {}
+/// }
+/// ```
 #[derive(Clone, Debug, PartialEq)]
 #[non_exhaustive]
 pub enum ModbusError {

@@ -12,6 +12,28 @@ use crate::frame::{Exception, Request, Response};
 ///
 /// For hooking into the request/response lifecycle without reimplementing the
 /// entire trait, see [`ServerHook`] and [`HookedService`].
+///
+/// # Example
+///
+/// ```no_run
+/// use async_trait::async_trait;
+/// use oms_modbus::frame::{Request, Response, Exception};
+/// use oms_modbus::server::Service;
+///
+/// /// A fixed-value service — always returns the same register value.
+/// struct FixedService { value: u16 }
+///
+/// #[async_trait]
+/// impl Service for FixedService {
+///     async fn call(&self, request: Request<'_>) -> Result<Response, Exception> {
+///         match request {
+///             Request::ReadHoldingRegisters(_addr, qty) =>
+///                 Ok(Response::ReadHoldingRegisters(vec![self.value; qty as usize])),
+///             _ => Err(Exception::IllegalFunction),
+///         }
+///     }
+/// }
+/// ```
 #[async_trait]
 pub trait Service: Send + Sync + 'static {
     async fn call(&self, request: Request<'_>) -> Result<Response, Exception>;

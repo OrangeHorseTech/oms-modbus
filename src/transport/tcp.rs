@@ -1,5 +1,45 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
-//! Modbus TCP client and server.
+//! Modbus TCP client and server with MBAP framing.
+//!
+//! # Quick start
+//!
+//! ```no_run
+//! use std::net::{IpAddr, Ipv4Addr, SocketAddr};
+//! use std::sync::Arc;
+//! use std::time::Duration;
+//! use oms_modbus::*;
+//!
+//! # async fn example() -> Result<(), Box<dyn std::error::Error>> {
+//! // ── Server ──────────────────────────────────────────────────
+//! let addr = SocketAddr::new(IpAddr::V4(Ipv4Addr::LOCALHOST), 502);
+//! let store = Arc::new(SlaveStore::with_holding_registers(&[(0, 1234)]));
+//! let server = tcp::TcpServer::bind(addr).await?;
+//! tokio::spawn(async move { server.serve_forever(store).await.ok(); });
+//!
+//! // ── Client ──────────────────────────────────────────────────
+//! let client = tcp::TcpClient::connect_with_timeout(addr, Duration::from_secs(3)).await?;
+//! let regs = client.read_holding_registers(1, 0, 1).await?;
+//! # Ok(())
+//! # }
+//! ```
+//!
+//! # Advanced MBAP configuration
+//!
+//! Use [`TcpConfig`] for non-standard devices and RTU-over-TCP gateways:
+//!
+//! ```no_run
+//! use oms_modbus::tcp::{TcpConfig, TidMode, LengthMode};
+//! # use std::net::SocketAddr;
+//! # async fn example() -> Result<(), Box<dyn std::error::Error>> {
+//! # let addr = "127.0.0.1:502".parse()?;
+//! let client = tcp::TcpClient::connect(addr).await?.with_config(TcpConfig {
+//!     tid: TidMode::Auto,                // auto-increment transaction ID
+//!     unit_id_in_body: true,             // UID also in PDU body
+//!     length_mode: LengthMode::Standard,
+//! });
+//! # Ok(())
+//! # }
+//! ```
 
 use std::net::SocketAddr;
 use std::sync::atomic::{AtomicU16, Ordering};
@@ -239,6 +279,21 @@ fn try_extract_tcp_pdu(
 ///
 /// Call `.with_reconnect(max, backoff)` to enable auto-reconnect on transport
 /// errors. Without it, transport errors are returned directly (no retry).
+///
+/// # Example
+///
+/// ```no_run
+/// use std::time::Duration;
+/// use oms_modbus::*;
+///
+/// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
+/// let addr = "192.168.1.10:502".parse()?;
+/// let client = tcp::TcpClient::connect_with_timeout(addr, Duration::from_secs(3)).await?;
+/// let regs = client.read_holding_registers(1, 0, 10).await?;
+/// client.write_single_register(1, 0, 42).await?;
+/// # Ok(())
+/// # }
+/// ```
 pub struct TcpClient {
     inner: Mutex<TcpInner>,
     addr: SocketAddr,
@@ -500,7 +555,24 @@ pub async fn with_options(addr: SocketAddr, opts: ClientOptions) -> std::io::Res
 
 // ── TCP server ──────────────────────────────────────────────────────────
 
-/// Modbus TCP server. Spawns one task per connection.
+/// Modbus TCP server. Spawns one tokio task per connection.
+///
+/// # Example
+///
+/// ```no_run
+/// use std::net::{IpAddr, Ipv4Addr, SocketAddr};
+/// use std::sync::Arc;
+/// use oms_modbus::*;
+///
+/// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
+/// let addr = SocketAddr::new(IpAddr::V4(Ipv4Addr::LOCALHOST), 502);
+/// let store = Arc::new(SlaveStore::with_holding_registers(&[(0, 1234)]));
+/// let server = tcp::TcpServer::bind(addr).await?;
+/// println!("Listening on {}", server.local_addr()?);
+/// // server.serve_forever(store).await?;  // blocks forever
+/// # Ok(())
+/// # }
+/// ```
 pub struct TcpServer {
     listener: tokio::net::TcpListener,
     tcp_config: TcpConfig,

@@ -44,6 +44,30 @@ type ReconnectFactory<T> = (
 ///
 /// For bus-level capture, use [`with_options`] which wraps the transport in
 /// [`SniffIo`] automatically.
+///
+/// # Example
+///
+/// ```no_run
+/// use std::sync::Arc;
+/// use std::time::Duration;
+/// use oms_modbus::*;
+///
+/// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
+/// // In-memory duplex — works with serial, TCP, Unix sockets too
+/// let (client_port, server_port) = tokio::io::duplex(1024);
+///
+/// // With capture + timing via ClientOptions
+/// let cap = Arc::new(BusCapture::unbounded());
+/// let opts = ClientOptions::default()
+///     .with_timeout(Duration::from_secs(3))
+///     .with_tap(cap.clone())
+///     .with_bus_timing(BusTiming::rtu_35t(9600));
+/// let client = rtu::with_options(client_port, opts);
+///
+/// let regs = client.read_holding_registers(1, 0, 5).await?;
+/// # Ok(())
+/// # }
+/// ```
 pub struct RtuClient<T> {
     inner: Mutex<RtuInner<T>>,
     timeout: Duration,
@@ -293,6 +317,23 @@ pub fn with_options<T: AsyncRead + AsyncWrite + Unpin + Send + 'static>(
 // ── RTU Server ──────────────────────────────────────────────────────────
 
 /// Modbus RTU server over any byte transport (serial, DuplexStream, etc.).
+///
+/// # Example
+///
+/// ```no_run
+/// use std::sync::Arc;
+/// use oms_modbus::*;
+///
+/// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
+/// let (port, _server_side) = tokio::io::duplex(64);
+/// let store = Arc::new(SlaveStore::with_holding_registers(&[(0, 42)]));
+///
+/// let server = rtu::RtuServer::new(port)
+///     .with_bus_timing(Arc::new(BusTiming::rtu_35t(9600)));
+/// tokio::spawn(async move { server.serve_forever(store).await.ok(); });
+/// # Ok(())
+/// # }
+/// ```
 pub struct RtuServer<T> {
     transport: T,
     bus_timing: Option<Arc<BusTiming>>,
